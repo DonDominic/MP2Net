@@ -234,7 +234,7 @@ class COCO(data.Dataset):
             for i in range(seq_num - 1):
                 pre_bboxes[i + 1] = np.array(pre_bboxes[i + 1])
                 pre_ids[i + 1] = np.array(pre_ids[i + 1])
-            img, bbox_tol, cls_id_tol, ids_tol, pre_bboxes, pre_ids = self.aug(img, bbox_tol, cls_id_tol, ids_tol, pre_bboxes, pre_ids)
+            img, _, bbox_tol, cls_id_tol, ids_tol, pre_bboxes, pre_ids = self.aug(img, img, bbox_tol, cls_id_tol, ids_tol, pre_bboxes, pre_ids)
             bbox_tol = bbox_tol.tolist()
             cls_id_tol = cls_id_tol.tolist()
             ids_tol = ids_tol.tolist()

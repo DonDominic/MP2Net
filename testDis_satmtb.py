@@ -14,7 +14,7 @@ import torch.nn.functional as F
 from collections import defaultdict
 
 from lib.models.stNet import get_det_net, load_model
-from lib.dataset.coco_icpr import COCO
+from lib.dataset.coco_mtb import COCO
 
 from lib.external.nms import soft_nms
 from lib.tracking_utils.discheck import check
@@ -151,12 +151,12 @@ def test(opt, split, modelPath, show_flag, results_name):
             ind, num_iters,total=bar.elapsed_td, eta=bar.eta_td)
 
         # read images
-        # folder = pre_processed_images['file_name'][0].split('/')
-        # if not os.path.exists(os.path.join(track_results_save_dir, folder[-3])):
-        #     os.makedirs(os.path.join(track_results_save_dir, folder[-3]))
-        # file_folder_cur = folder[-3] + '/' + folder[-2]                               # SATMTB
-        file_folder_cur = pre_processed_images['file_name'][0].split('_')[0]            # ICPR
-        # file_folder_cur = pre_processed_images['file_name'][0].split('/')[-3]         # AIRMOT & Skysat
+        folder = pre_processed_images['file_name'][0].split('/')
+        if not os.path.exists(os.path.join(track_results_save_dir, folder[-3])):
+            os.makedirs(os.path.join(track_results_save_dir, folder[-3]))
+        file_folder_cur = folder[-3] + '/' + folder[-2]                               # SATMTB
+        # file_folder_cur = pre_processed_images['file_name'][0].split('_')[0]        # ICPR
+        # file_folder_cur = pre_processed_images['file_name'][0].split('/')[-3]       # AIRMOT & Skysat
         meta = pre_process(pre_processed_images['input'], scale=1)
         image = pre_processed_images['input'].cuda()
 
@@ -211,8 +211,8 @@ def test(opt, split, modelPath, show_flag, results_name):
                 fid.close()
             file_folder_pre = file_folder_buffer[0]
             car_tracker = Sort()    # 1
-            # plane_tracker = Sort()    # 2
-            # ship_tracker = Sort()    # 3
+            plane_tracker = Sort()    # 2
+            ship_tracker = Sort()    # 3
             # train_tracker = Sort()    # 4
             dets_buffer = dets_temp
             dis_buffer = dis_temp
@@ -246,16 +246,16 @@ def test(opt, split, modelPath, show_flag, results_name):
                     car_track_bbs_ids = car_tracker.update(dets_track[i])
                     car_track_bbs_ids = car_track_bbs_ids[::-1,:]
                     car_track_bbs_ids[:,2:4] = car_track_bbs_ids[:,2:4] - car_track_bbs_ids[:,:2]
-                # if i == 2:
-                #     plane_track_bbs_ids = plane_tracker.update(dets_track[i])
-                #     plane_track_bbs_ids = plane_track_bbs_ids[::-1,:]
-                #     plane_track_bbs_ids[:,2:4] = plane_track_bbs_ids[:,2:4] - plane_track_bbs_ids[:,:2]
-                #     plane_track_bbs_ids[:, -1] = plane_track_bbs_ids[:, -1] + 1000
-                # elif i == 3:
-                #     ship_track_bbs_ids = ship_tracker.update(dets_track[i])
-                #     ship_track_bbs_ids = ship_track_bbs_ids[::-1,:]
-                #     ship_track_bbs_ids[:,2:4] = ship_track_bbs_ids[:,2:4] - ship_track_bbs_ids[:,:2]
-                #     ship_track_bbs_ids[:, -1] = ship_track_bbs_ids[:, -1] + 2000
+                if i == 2:
+                    plane_track_bbs_ids = plane_tracker.update(dets_track[i])
+                    plane_track_bbs_ids = plane_track_bbs_ids[::-1,:]
+                    plane_track_bbs_ids[:,2:4] = plane_track_bbs_ids[:,2:4] - plane_track_bbs_ids[:,:2]
+                    plane_track_bbs_ids[:, -1] = plane_track_bbs_ids[:, -1] + 1000
+                elif i == 3:
+                    ship_track_bbs_ids = ship_tracker.update(dets_track[i])
+                    ship_track_bbs_ids = ship_track_bbs_ids[::-1,:]
+                    ship_track_bbs_ids[:,2:4] = ship_track_bbs_ids[:,2:4] - ship_track_bbs_ids[:,:2]
+                    ship_track_bbs_ids[:, -1] = ship_track_bbs_ids[:, -1] + 2000
                 # else:
                 #     train_track_bbs_ids = train_tracker.update(dets_track[i])
                 #     train_track_bbs_ids = train_track_bbs_ids[::-1,:]
@@ -265,19 +265,19 @@ def test(opt, split, modelPath, show_flag, results_name):
             if saveTxt:
                 im_count += 1
                 for it in range(car_track_bbs_ids.shape[0]):
-                    fid.write('%d,%d,%0.2f,%0.2f,%0.2f,%0.2f,1,1,1\n'%(im_count,
+                    fid.write('%d,%d,%0.2f,%0.2f,%0.2f,%0.2f,1,0,1\n'%(im_count,
                             car_track_bbs_ids[it,4], car_track_bbs_ids[it,0], car_track_bbs_ids[it,1],
                                     car_track_bbs_ids[it, 2], car_track_bbs_ids[it, 3]))
-                # for it in range(plane_track_bbs_ids.shape[0]):
-                #     fid.write('%d,%d,%0.2f,%0.2f,%0.2f,%0.2f,1,2,1\n'%(im_count,
-                #             plane_track_bbs_ids[it,4], plane_track_bbs_ids[it,0], plane_track_bbs_ids[it,1],
-                #                     plane_track_bbs_ids[it, 2], plane_track_bbs_ids[it, 3]))
-                # for it in range(ship_track_bbs_ids.shape[0]):
-                #     fid.write('%d,%d,%0.2f,%0.2f,%0.2f,%0.2f,1,3,1\n'%(im_count,
-                #             ship_track_bbs_ids[it,4], ship_track_bbs_ids[it,0], ship_track_bbs_ids[it,1],
-                #                     ship_track_bbs_ids[it, 2], ship_track_bbs_ids[it, 3]))
+                for it in range(plane_track_bbs_ids.shape[0]):
+                    fid.write('%d,%d,%0.2f,%0.2f,%0.2f,%0.2f,1,1,1\n'%(im_count,
+                            plane_track_bbs_ids[it,4], plane_track_bbs_ids[it,0], plane_track_bbs_ids[it,1],
+                                    plane_track_bbs_ids[it, 2], plane_track_bbs_ids[it, 3]))
+                for it in range(ship_track_bbs_ids.shape[0]):
+                    fid.write('%d,%d,%0.2f,%0.2f,%0.2f,%0.2f,1,2,1\n'%(im_count,
+                            ship_track_bbs_ids[it,4], ship_track_bbs_ids[it,0], ship_track_bbs_ids[it,1],
+                                    ship_track_bbs_ids[it, 2], ship_track_bbs_ids[it, 3]))
                 # for it in range(train_track_bbs_ids.shape[0]):
-                #     fid.write('%d,%d,%0.2f,%0.2f,%0.2f,%0.2f,1,4,1\n'%(im_count,
+                #     fid.write('%d,%d,%0.2f,%0.2f,%0.2f,%0.2f,1,3,1\n'%(im_count,
                 #             train_track_bbs_ids[it,4], train_track_bbs_ids[it,0], train_track_bbs_ids[it,1],
                 #                     train_track_bbs_ids[it, 2], train_track_bbs_ids[it, 3]))
 
@@ -285,7 +285,7 @@ def test(opt, split, modelPath, show_flag, results_name):
     bar.finish()
 
 if __name__ == '__main__':
-    split = 'val'
+    split = 'test'
     show_flag = False
     if (not os.path.exists(opt.save_results_dir)):
         os.mkdir(opt.save_results_dir)
