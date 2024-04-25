@@ -8,7 +8,7 @@ The official PyTorch implementation of our **TGRS 2024** paper:
 
 ## Highlight
 
-![](MP2Net.pdf)
+![](MP2Net.png)
 
 ### Brief Introduction
 
